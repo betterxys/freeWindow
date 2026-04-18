@@ -25,6 +25,11 @@ jobs:
       - name: busted
         run: busted --helper=spec/helper.lua --output=utfTerminal --verbose spec/
 
+      - name: shellcheck
+        run: |
+          sudo apt-get install -y -qq shellcheck
+          shellcheck scripts/*.sh scripts/install.command
+
   mac-smoke:
     name: macOS smoke (best effort)
     runs-on: macos-latest

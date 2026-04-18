@@ -9,33 +9,63 @@
 
 ## 安装
 
-在你的 Mac 上：
+你只需要在你 Mac 上挑**三种方式之一**，都在 5 分钟以内、无需先了解终端/Git：
+
+### 方式 A：一行命令（推荐）
+
+打开 **Terminal.app**（在 Spotlight 里搜 `terminal` 按回车），把下面这一行粘进去，回车：
 
 ```bash
-git clone <this-repo> ~/src/mac-window-manager
-cd ~/src/mac-window-manager
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/betterxys/freeWindow/main/scripts/install-oneline.sh)"
+```
+
+剩下的全自动：
+
+1. 首次运行会弹 Apple 的 "Install Command Line Tools" 对话框 → 点 **Install**，等装完。
+2. 如果没 Homebrew，会自动装；已有就跳过。
+3. 自动 `brew install --cask hammerspoon`。
+4. 把本仓库拉到 `~/Library/Application Support/mac-window-manager/`，并软链到 `~/.hammerspoon/`。
+5. 自动打开 **System Settings → Privacy & Security → Accessibility**，弹对话框提示你把 **Hammerspoon** 的开关打开。
+6. 自动让 Hammerspoon 重载配置，弹一个 "🎉 安装完成"的对话框。
+
+唯一需要你动手的就是第 5 步的那一下开关。
+
+### 方式 B：双击 `.command` 文件（完全不想碰终端的选它）
+
+1. 打开 [仓库的 `scripts/` 目录](https://github.com/betterxys/freeWindow/tree/main/scripts)。
+2. 点 `install.command` → **Download raw file**，下载到桌面。
+3. 右键 → **打开**（第一次必须右键，macOS 会问一次"确定要打开吗"，点"打开"）。
+4. Terminal 会自动弹出来，和方式 A 走完全一样的流程。
+
+### 方式 C：自己 clone（适合想看源码/要改的人）
+
+```bash
+git clone https://github.com/betterxys/freeWindow.git ~/src/freeWindow
+cd ~/src/freeWindow
 ./scripts/install.sh
 ```
 
-安装脚本会：
-
-1. 用 Homebrew 装 Hammerspoon（已装的话跳过）
-2. 备份已有的 `~/.hammerspoon` 到 `~/.hammerspoon.backup-<时间戳>`
-3. 把 `init.lua`、`modules/`、`spec/` 软链到 `~/.hammerspoon/`（`git pull` 之后 Reload Config 就生效）
-4. 如果还没有 `~/.hammerspoon/config.lua`，从 `config.example.lua` 拷贝一份
-
-**接下来必须手动做一次**：
-
-1. 打开 **System Settings → Privacy & Security → Accessibility**，把 **Hammerspoon** 勾上。（Apple 的安全限制，所有窗口管理器都躲不开。）
-2. 点菜单栏的 Hammerspoon 图标 → **Install Command Line Tool**（为了让 `scripts/doctor.sh` 能用 `hs` CLI 诊断）。
-
-完成后运行：
+### 装完之后
 
 ```bash
-./scripts/doctor.sh
+bash ~/Library/Application\ Support/mac-window-manager/scripts/doctor.sh
 ```
 
-看到所有 `✓` 就可以开始用了。
+全 `✓` 就可以用了。
+
+### 卸载
+
+一键干净卸载（恢复安装前的 `~/.hammerspoon` 备份）：
+
+```bash
+bash ~/Library/Application\ Support/mac-window-manager/scripts/uninstall.sh
+```
+
+连 Hammerspoon.app 和仓库 checkout 一起删：
+
+```bash
+bash ~/Library/Application\ Support/mac-window-manager/scripts/uninstall.sh --purge
+```
 
 ## 默认快捷键
 
