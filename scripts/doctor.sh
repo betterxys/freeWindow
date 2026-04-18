@@ -41,11 +41,11 @@ check_config_linked() {
   local init="${HOME}/.hammerspoon/init.lua"
   if [[ -L "$init" ]]; then
     local target; target="$(readlink "$init")"
-    pass "~/.hammerspoon/init.lua -> $target"
+    pass "${HOME}/.hammerspoon/init.lua -> $target"
   elif [[ -f "$init" ]]; then
-    warn "~/.hammerspoon/init.lua exists but is not a symlink. scripts/install.sh backs this up and links ours."
+    warn "${HOME}/.hammerspoon/init.lua exists but is not a symlink. scripts/install.sh backs this up and links ours."
   else
-    fail "~/.hammerspoon/init.lua missing. Run scripts/install.sh."
+    fail "${HOME}/.hammerspoon/init.lua missing. Run scripts/install.sh."
   fi
 }
 
