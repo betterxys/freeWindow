@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lua:
+    name: luacheck + busted (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Lua & tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lua5.4 liblua5.4-dev luarocks
+          sudo luarocks --lua-version=5.4 install luacheck
+          sudo luarocks --lua-version=5.4 install busted
+
+      - name: luacheck
+        run: luacheck modules init.lua spec
+
+      - name: busted
+        run: busted --helper=spec/helper.lua --output=utfTerminal --verbose spec/
+
+  mac-smoke:
+    name: macOS smoke (best effort)
+    runs-on: macos-latest
+    # Keep this job non-blocking: Hammerspoon cannot be exercised headlessly,
+    # but we can at least install the CLI tools and syntax-check everything.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Lua
+        run: |
+          brew install lua luarocks || true
+          luarocks install luacheck
+          luarocks install busted
+
+      - name: luacheck
+        run: luacheck modules init.lua spec
+
+      - name: busted
+        run: busted --helper=spec/helper.lua --output=utfTerminal --verbose spec/
+
+      - name: Shellcheck install/doctor
+        run: |
+          brew install shellcheck || true
+          shellcheck scripts/install.sh scripts/doctor.sh || true
