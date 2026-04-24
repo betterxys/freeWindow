@@ -13,6 +13,9 @@
 local hotkeys_mod = require("modules.hotkeys")
 local driver = require("modules.driver")
 
+-- Enable hs CLI (hs -c '...') for doctor.sh and debugging.
+require("hs.ipc")
+
 local M = {}
 
 -- Load a user-local override if present. Never checked into git.
