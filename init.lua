@@ -10,8 +10,9 @@
 --      physical display even after a hardware change).
 --   4. Install global Cmd-backed commands for save/restore layout.
 
-local hotkeys_mod = require("modules.hotkeys")
-local driver = require("modules.driver")
+local hotkeys_mod  = require("modules.hotkeys")
+local driver       = require("modules.driver")
+local cheatsheet   = require("modules.cheatsheet")
 
 -- Enable hs CLI (hs -c '...') for doctor.sh and debugging.
 require("hs.ipc")
@@ -84,6 +85,24 @@ local function install_bindings()
         #plan_or_err.commands, #plan_or_err.unresolved))
     end
   end), name = "restore_layout" }
+
+  -- Cheatsheet: hyper + /  (toggle floating hotkey reference panel)
+  local cheatsheet_bindings = {}
+  for _, b in ipairs(bindings) do
+    cheatsheet_bindings[#cheatsheet_bindings+1] = b
+  end
+  cheatsheet_bindings[#cheatsheet_bindings+1] = {
+    mods = M.config.hyper, key = "s", name = "save_layout",
+  }
+  cheatsheet_bindings[#cheatsheet_bindings+1] = {
+    mods = M.config.hyper, key = "r", name = "restore_layout",
+  }
+  cheatsheet_bindings[#cheatsheet_bindings+1] = {
+    mods = M.config.hyper, key = "/", name = "cheatsheet",
+  }
+  active_bindings[#active_bindings+1] = { handle = hs.hotkey.bind(M.config.hyper, "/", "cheatsheet", function()
+    cheatsheet.toggle(cheatsheet_bindings, M.config.hyper)
+  end), name = "cheatsheet" }
 end
 
 install_bindings()
