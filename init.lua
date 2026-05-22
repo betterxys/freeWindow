@@ -19,6 +19,28 @@ require("hs.ipc")
 
 local M = {}
 
+-- ── Lightweight toast: small, brief, Esc to dismiss ─────────────────────────
+local toast_style = {
+  strokeWidth  = 0,
+  strokeColor  = { white = 0, alpha = 0 },
+  fillColor    = { white = 0, alpha = 0.6 },
+  textColor    = { white = 1, alpha = 0.9 },
+  textFont     = ".AppleSystemUIFont",
+  textSize     = 14,
+  radius       = 6,
+  atScreenEdge = 0,
+  fadeInDuration  = 0.1,
+  fadeOutDuration = 0.15,
+  padding         = { x = 14, y = 6 },
+}
+
+local TOAST_DURATION = 0.75  -- seconds
+
+local function toast(msg)
+  hs.alert.closeAll(0)
+  hs.alert.show(msg, toast_style, TOAST_DURATION)
+end
+
 -- Load a user-local override if present. Never checked into git.
 local ok, user_config = pcall(require, "config")
 if not ok then user_config = {} end
@@ -56,7 +78,7 @@ local function install_bindings()
       msgs[#msgs+1] = table.concat(c.mods, "+") .. "+" .. c.key ..
         " -> " .. table.concat(c.names, ", ")
     end
-    hs.alert.show("Hotkey conflicts:\n" .. table.concat(msgs, "\n"))
+    toast("Hotkey conflicts:\n" .. table.concat(msgs, "\n"))
   end
 
   for _, b in ipairs(bindings) do
@@ -72,16 +94,16 @@ local function install_bindings()
   active_bindings[#active_bindings+1] = { handle = hs.hotkey.bind(M.config.hyper, "s", "save_layout", function()
     local path = M.config.layouts_dir .. "/default.lua"
     driver.save_layout(path)
-    hs.alert.show("Saved layout -> " .. path)
+    toast("Saved layout -> " .. path)
   end), name = "save_layout" }
 
   active_bindings[#active_bindings+1] = { handle = hs.hotkey.bind(M.config.hyper, "r", "restore_layout", function()
     local path = M.config.layouts_dir .. "/default.lua"
     local ok_r, plan_or_err = pcall(driver.restore_layout, path)
     if not ok_r then
-      hs.alert.show("Restore failed: " .. tostring(plan_or_err))
+      toast("Restore failed: " .. tostring(plan_or_err))
     else
-      hs.alert.show(string.format("Restored %d windows (%d unresolved)",
+      toast(string.format("Restored %d windows (%d unresolved)",
         #plan_or_err.commands, #plan_or_err.unresolved))
     end
   end), name = "restore_layout" }
@@ -110,10 +132,10 @@ install_bindings()
 -- Rewire on screen changes.
 M.screen_watcher = hs.screen.watcher.new(function()
   install_bindings()
-  hs.alert.show("Screen layout changed – bindings reinstalled")
+  -- hs.alert.show("Screen layout changed – bindings reinstalled")
 end)
 M.screen_watcher:start()
 
-hs.alert.show("Window manager loaded (" .. #active_bindings .. " hotkeys)")
+toast("Window manager loaded (" .. #active_bindings .. " hotkeys)")
 
 return M

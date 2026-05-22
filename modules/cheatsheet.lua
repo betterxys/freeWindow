@@ -9,6 +9,7 @@
 
 local M = {}
 local _view = nil   -- hs.webview instance while panel is open, nil otherwise
+local _esc  = nil   -- hs.hotkey for Esc-to-dismiss while panel is open
 
 -- ── Symbol / format helpers ──────────────────────────────────────────────────
 
@@ -211,13 +212,18 @@ local function build_html(bindings, dismiss_combo)
   end
 
   p('</div>')
-  p('<div class="foot">Press '..esc(dismiss_combo)..
-    ' again to dismiss &nbsp;·&nbsp; or click ✕</div>')
+  p('<div class="foot">Press Esc or '..esc(dismiss_combo)..
+    ' to dismiss &nbsp;·&nbsp; or click ✕</div>')
   p('</body></html>')
   return table.concat(t, "\n")
 end
 
 -- ── Public API ───────────────────────────────────────────────────────────────
+
+local function close_panel()
+  if _esc then _esc:delete(); _esc = nil end
+  if _view then pcall(function() _view:delete() end); _view = nil end
+end
 
 --- Toggle the cheatsheet panel.
 -- @param bindings  Full binding list (from hotkeys_mod.build + extras).
@@ -228,14 +234,10 @@ function M.toggle(bindings, hyper_mods)
   if _view then
     local ok, vis = pcall(function() return _view:isVisible() end)
     if ok and vis then
-      -- Panel is visible → close it (toggle off).
-      _view:delete()
-      _view = nil
+      close_panel()
       return
     end
-    -- Stale reference (user closed via ✕) → clean up and fall through to reopen.
-    pcall(function() _view:delete() end)
-    _view = nil
+    close_panel()
   end
 
   -- ── Open the panel ──────────────────────────────────────────────────────
@@ -258,6 +260,9 @@ function M.toggle(bindings, hyper_mods)
   _view:level(hs.drawing.windowLevels.floating)
   _view:html(build_html(bindings, dismiss_combo))
   _view:show()
+
+  -- Esc to dismiss.
+  _esc = hs.hotkey.bind({}, "escape", function() close_panel() end)
 end
 
 return M

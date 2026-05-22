@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Background: dark rounded rect -->
+  <rect x="0" y="0" width="1024" height="1024" rx="220" fill="#1C1C1E"/>
+  
+  <!-- Four quadrants representing window management -->
+  <!-- Top-left: Gold -->
+  <rect x="140" y="140" width="340" height="340" rx="30" fill="#FFD60A" opacity="0.95"/>
+  <!-- Top-right: Lighter gold -->
+  <rect x="544" y="140" width="340" height="340" rx="30" fill="#FFD60A" opacity="0.6"/>
+  <!-- Bottom-left: Even lighter -->
+  <rect x="140" y="544" width="340" height="340" rx="30" fill="#FFD60A" opacity="0.4"/>
+  <!-- Bottom-right: Lightest -->
+  <rect x="544" y="544" width="340" height="340" rx="30" fill="#FFD60A" opacity="0.25"/>
+  
+  <!-- Small arrow in center suggesting movement -->
+  <path d="M 492 492 L 532 492 L 512 472 Z" fill="white" opacity="0.8"/>
+  <path d="M 492 532 L 532 532 L 512 552 Z" fill="white" opacity="0.8"/>
+  <path d="M 472 512 L 492 492 L 492 532 Z" fill="white" opacity="0.8"/>
+  <path d="M 552 512 L 532 492 L 532 532 Z" fill="white" opacity="0.8"/>
+</svg>
