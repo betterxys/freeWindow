@@ -1,222 +1,215 @@
-# Mac Window Manager
+# FreeWindow
 
-一个基于 [Hammerspoon](https://www.hammerspoon.org/) 的 macOS 窗口管理器，用快捷键把当前窗口**任意**丢到**哪块屏幕**的**哪个位置**——特别为多显示器场景设计。
+FreeWindow is a native macOS menu-bar productivity app:
 
-- **零运行时依赖**（除了 Hammerspoon 本身）
-- **纯文本配置**，整份 Lua，跟 Git
-- **端到端测试在 Linux 上跑通**——所有几何计算、屏幕排序、快捷键冲突、跨屏迁移、布局存取都被单元测试和场景回放覆盖
-- **脚本化安装**：一条命令软链到 `~/.hammerspoon`，`git pull` 就等于升级
+- window placement, resize, layouts, and cross-display movement;
+- clipboard history for text, rich text, images, and files;
+- region screenshots pinned as floating reference windows;
+- a Pomodoro timer with context-aware break reminders;
+- bundled [Ice](https://github.com/jordanbaird/Ice) for menu-bar overflow management.
 
-## 安装
+It is built with Swift, AppKit, SwiftUI, Carbon hotkeys, and Accessibility APIs.
+There is no Hammerspoon, Electron, or runtime dependency.
 
-你只需要在你 Mac 上挑**三种方式之一**，都在 5 分钟以内、无需先了解终端/Git：
+## Install
 
-### 方式 A：一行命令（推荐）
+Requirements: macOS 13 or later. Ice's advanced menu-bar features require
+macOS 14 or later.
 
-打开 **Terminal.app**（在 Spotlight 里搜 `terminal` 按回车），把下面这一行粘进去，回车：
-
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/betterxys/freeWindow/main/scripts/install-oneline.sh)"
-```
-
-剩下的全自动：
-
-1. 首次运行会弹 Apple 的 "Install Command Line Tools" 对话框 → 点 **Install**，等装完。
-2. 如果没 Homebrew，会自动装；已有就跳过。
-3. 自动 `brew install --cask hammerspoon`。
-4. 把本仓库拉到 `~/Library/Application Support/mac-window-manager/`，并软链到 `~/.hammerspoon/`。
-5. 自动打开 **System Settings → Privacy & Security → Accessibility**，弹对话框提示你把 **Hammerspoon** 的开关打开。
-6. 自动让 Hammerspoon 重载配置，弹一个 "🎉 安装完成"的对话框。
-
-唯一需要你动手的就是第 5 步的那一下开关。
-
-### 方式 B：双击 `.command` 文件（完全不想碰终端的选它）
-
-1. 打开 [仓库的 `scripts/` 目录](https://github.com/betterxys/freeWindow/tree/main/scripts)。
-2. 点 `install.command` → **Download raw file**，下载到桌面。
-3. 右键 → **打开**（第一次必须右键，macOS 会问一次"确定要打开吗"，点"打开"）。
-4. Terminal 会自动弹出来，和方式 A 走完全一样的流程。
-
-### 方式 C：自己 clone（适合想看源码/要改的人）
+Build the app and DMG:
 
 ```bash
-git clone https://github.com/betterxys/freeWindow.git ~/src/freeWindow
-cd ~/src/freeWindow
-./scripts/install.sh
+cd FreeWindow
+./Scripts/build-dmg.sh
+open build/FreeWindow-1.2.0.dmg
 ```
 
-### 装完之后
+Or build and install directly:
 
 ```bash
-bash ~/Library/Application\ Support/mac-window-manager/scripts/doctor.sh
+./Scripts/build-dmg.sh && ./Scripts/install.sh
 ```
 
-全 `✓` 就可以用了。
+The installer only installs Ice when `/Applications/Ice.app` is missing.
+Existing Ice installations are never overwritten, preserving their permissions
+and settings.
 
-### 卸载
+### Permissions
 
-一键干净卸载（恢复安装前的 `~/.hammerspoon` 备份）：
+Enable **FreeWindow** in:
+
+`System Settings → Privacy & Security → Accessibility`
+
+This is required for moving and resizing other apps' windows. Screenshot
+capture may also prompt for Screen Recording access.
+
+For stable Accessibility permission across local rebuilds, run once:
 
 ```bash
-bash ~/Library/Application\ Support/mac-window-manager/scripts/uninstall.sh
+./Scripts/setup-signing.sh
 ```
 
-连 Hammerspoon.app 和仓库 checkout 一起删：
+If no identity exists, create a trusted self-use identity:
 
 ```bash
-bash ~/Library/Application\ Support/mac-window-manager/scripts/uninstall.sh --purge
+./Scripts/create-local-signing-cert.sh
 ```
 
-## 默认快捷键
+Public distribution requires an Apple Developer Program `Developer ID
+Application` certificate and notarization; the local certificate is for this
+Mac only.
 
-前缀是 **⌃⌥⌘**（`hyper`）和 **⌃⌥⌘⇧**（`hyper-shift`）。想换成别的，编辑 `~/.hammerspoon/config.lua`。
+## Hotkeys
 
-### 当前屏幕上的定位
+`Hyper` = `⌃⌥⌘`; `Hyper Shift` = `⌃⌥⌘⇧`.
 
-| 快捷键 | 动作 |
+### Window management
+
+| Shortcut | Action |
 |---|---|
-| `⌃⌥⌘ + H` | 左半屏 |
-| `⌃⌥⌘ + L` | 右半屏 |
-| `⌃⌥⌘ + K` | 上半屏 |
-| `⌃⌥⌘ + J` | 下半屏 |
-| `⌃⌥⌘ + U / I` | 左上 / 右上象限 |
-| `⌃⌥⌘ + N / M` | 左下 / 右下象限 |
-| `⌃⌥⌘ + Return` | 最大化到当前屏（非原生全屏） |
-| `⌃⌥⌘ + C` | 保持大小，居中 |
-| `⌃⌥⌘⇧ + H / J / L` | 左 / 中 / 右 三分之一 |
-| `⌃⌥⌘⇧ + U / O` | 左 / 右 三分之二 |
-| `⌃⌥⌘⇧ + 1..9` | 3×3 栅格任选格（1=左上，5=中，9=右下） |
+| `Hyper + H / L / K / J` | Left / right / top / bottom half |
+| `Hyper + U / I / N / M` | Four quadrants |
+| `Hyper + Return` | Maximize |
+| `Hyper + C` | Center without resizing |
+| `Hyper Shift + H / J / L` | Left / center / right third |
+| `Hyper Shift + U / O` | Left / right two-thirds |
+| `Hyper Shift + 1…9` | 3×3 grid |
+| `Hyper + ← / → / ↑ / ↓` | Nudge one grid step |
+| `Hyper + ] / [` | Wider / narrower |
+| `Hyper Shift + ] / [` | Taller / shorter |
+| `Hyper + 1 / 2 / 3` | Send to display 1 / 2 / 3 |
+| `Hyper + . / ,` | Next / previous display |
+| `Hyper + S / R` | Save / restore the default layout |
+| `Hyper + /` | Toggle shortcut cheatsheet |
 
-### 细粒度平移与缩放
+Displays are ordered left-to-right by physical position. The saved layout is
+stored at `~/.freewindow/layouts/default.json`.
 
-默认按 12 列 × 8 行虚拟栅格步进，可在 `config.lua` 里改。
+### Clipboard and screenshot
 
-| 快捷键 | 动作 |
+| Shortcut | Action |
 |---|---|
-| `⌃⌥⌘ + ← / → / ↑ / ↓` | 向对应方向平移一格 |
-| `⌃⌥⌘ + ] / [` | 加宽 / 变窄 |
-| `⌃⌥⌘⇧ + ] / [` | 变高 / 变矮 |
+| `Hyper + V` | Toggle clipboard history |
+| `Hyper + P` | Select a region and pin the screenshot |
+| `Hyper Shift + P` | Remove all screenshot pins |
 
-### 跨屏幕
+### Pomodoro
 
-屏幕按 **左→右、上→下的物理位置**排序编号（不是 macOS 的显示图顺序），所以 "1 号屏" 永远是最左边那块。
-
-| 快捷键 | 动作 |
+| Shortcut | Action |
 |---|---|
-| `⌃⌥⌘ + 1 / 2 / 3` | 把窗口送到第 1 / 2 / 3 块屏，保持相对位置和大小 |
-| `⌃⌥⌘ + . / ,` | 下一块 / 上一块屏（环形） |
+| `⌃⇧S` | Start / pause / resume |
+| `Hyper Shift + .` | Skip the current phase |
+| `Hyper Shift + X` | Cancel |
+| `Hyper Shift + /` | Show current status |
 
-### 布局存取
+Defaults: 25 minutes work, 5 minutes short rest, and a 15-minute long rest
+after every four work cycles.
 
-| 快捷键 | 动作 |
-|---|---|
-| `⌃⌥⌘ + S` | 把当前所有可见窗口的位置存为 "default" 布局 |
-| `⌃⌥⌘ + R` | 恢复 "default" 布局 |
+At the end of work, the timer freezes while the user chooses:
 
-布局文件存在 `~/.hammerspoon/layouts/default.lua`，纯文本、可版本化、可手编。
+- **Start break** — starts the full break from the click;
+- **Snooze** — continues work for the configured delay, then asks again;
+- **Skip once** — skips the break and starts the next full work period.
 
-## 用你自己的命名（左屏/主屏/右屏）
+The gray full-screen backdrop is removed when the warning countdown reaches
+zero; the choice panel remains until the user acts. Any timer command also
+clears a stale reminder.
 
-编辑 `~/.hammerspoon/config.lua`：
+Break discipline:
 
-```lua
-return {
-  role_map = {
-    left  = 1,                               -- 1-based 物理位置
-    main  = "Built-in Retina Display",       -- 或者直接写屏幕名
-    right = 3,
-  },
+- `gentle` (default): reminder only, never sleeps the display;
+- `firm`: reserved for stronger skip limits;
+- `strict`: the confirmed break can sleep or lock the screen.
+
+Meeting, screen-sharing, microphone, and display-mirroring signals defer the
+work-complete prompt. After the retry limit, FreeWindow asks the user instead
+of taking an automatic action.
+
+## Configuration
+
+Copy the example and edit any values you need:
+
+```bash
+mkdir -p ~/.freewindow
+cp config.example.json ~/.freewindow/config.json
+```
+
+Important Pomodoro keys:
+
+```json
+{
+  "pomodoro": {
+    "work_minutes": 25,
+    "rest_minutes": 5,
+    "long_rest_minutes": 15,
+    "cycles_until_long_rest": 4,
+    "break_discipline": "gentle",
+    "break_snooze_minutes": 5,
+    "lock_warning_seconds": 10,
+    "lock_action": "displays_sleep",
+    "busy_grace_seconds": 60,
+    "busy_max_retries": 3
+  }
 }
 ```
 
-然后在 `init.lua` 里就能 `actions.send_to_role(ctx, "main")` 了。默认没有绑定到快捷键——想加自己加。
+`lock_action` is `displays_sleep` or `lock_screen`. Custom
+`busy_keywords` replace the built-in list.
 
-## 开发与测试
-
-仓库里整个 `spec/` 是一套 **在 Linux 上跑**的测试，覆盖：
-
-- `modules/geometry.lua`：栅格、半屏、象限、跨屏 ratio 保持、边界钳位
-- `modules/screens.lua`：显示器排序、id/name/role 解析、环形下一块
-- `modules/actions.lua`：所有动作返回的矩形
-- `modules/layouts.lua`：序列化往返、ID/app/title 匹配回退、idempotent restore、屏幕重命名
-- `modules/hotkeys.lua`：默认绑定完整性、(mods,key) 冲突检测
-- `spec/e2e_spec.lua`：真正加载 `init.lua`，按下快捷键，验 `setFrame` 日志
-- `spec/scenarios_spec.lua`：多步脚本回放 + `spec/golden/*.lua` 快照 diff
-- `spec/fakes/hs.lua`：Linux 下 Hammerspoon API 的假实现（约 200 行）
+For a no-sleep test run:
 
 ```bash
-# 安装测试工具链（仅首次）
-sudo apt-get install -y lua5.4 liblua5.4-dev luarocks
-sudo luarocks --lua-version=5.4 install luacheck
-sudo luarocks --lua-version=5.4 install busted
-
-make check   # lint + 所有测试
-make lint
-make test
-make clean-golden  # 有意改行为后，重生成快照
+touch /tmp/freewindow_no_lock
 ```
 
-### 在 Linux 上跑通 ≠ 在 Mac 上一定没事
+Delete that file to re-enable the configured screen action.
 
-下面这些只有真 Mac 能验，放一份手动清单：
+## Build and test
 
-## Mac 手动验收清单
-
-第一次装完、以及每次较大改动之后，对着跑一遍。预计 5–10 分钟。
-
-- [ ] **加载无警告**：Hammerspoon 菜单 → Console，应看到 `Window manager loaded (N hotkeys)`，没有红字错误。
-- [ ] **Accessibility 已开**：`./scripts/doctor.sh` 返回 `Accessibility permission granted`。
-- [ ] **多屏识别**：`doctor.sh` 输出里的 `[1] ... [2] ... [3] ...` 顺序应当跟你的物理左→右排列一致。
-- [ ] **基本半屏**：随便找个窗口 → `⌃⌥⌘ + H` 左半 → `⌃⌥⌘ + L` 右半 → `⌃⌥⌘ + Return` 最大。
-- [ ] **象限与三分**：`⌃⌥⌘ + U` 左上 → `⌃⌥⌘⇧ + 5` 中心格 → 视觉对齐正确。
-- [ ] **跨屏绝对**：`⌃⌥⌘ + 2` → 当前窗口跳到物理上第 2 块屏，大小和相对位置保持。连按 `1/2/3` 三下，每次都应该到你记忆中对应的屏。
-- [ ] **跨屏循环**：`⌃⌥⌘ + .` 循环下一块屏，`⌃⌥⌘ + ,` 上一块。
-- [ ] **平移钳位**：窗口放在左边缘，按 `⌃⌥⌘ + ←` → 窗口贴齐屏左边不越界。
-- [ ] **热拔插**：正在用窗口时拔掉一块外接屏 → Hammerspoon Console 应出现 `Screen layout changed – bindings reinstalled`；窗口若在被拔那块屏，应已迁到残留屏（macOS 会自动做这一步，我们要确保之后快捷键依然工作）。
-- [ ] **顽固 app**：试一个 Chrome 窗口和一个 iTerm2 窗口，重复几个快捷键，确认无 "窗口抖一下但没挪" 现象。（Chrome 需要允许在背景被移动的首次提示。）
-- [ ] **原生全屏豁免**：对一个**原生全屏**（绿灯）的窗口按快捷键——预期行为是**无变化**（macOS 不允许 AX 移动全屏窗口）。这不是 bug。
-- [ ] **刘海兼容**：MacBook 内屏上按 `⌃⌥⌘ + U` 左上象限 → 上边缘不会被刘海遮内容。
-- [ ] **保存/恢复布局**：摆好窗口 → `⌃⌥⌘ + S`（应提示保存路径） → 随便拖乱 → `⌃⌥⌘ + R`（应提示 `Restored N windows`）。再回头看窗口应已恢复。
-- [ ] **冲突检测**：打开 `~/.hammerspoon/config.lua`，故意把 `hyper` 设成 `{ "cmd" }` 然后 reload，应在屏幕上看到 "Hotkey conflicts: ..." 的弹窗（说明检测逻辑在工作）；改回默认。
-- [ ] **doctor 无 `✗`**：`./scripts/doctor.sh` 以 0 退出。
-
-如果以上哪条不对，把 Hammerspoon Console 的报错贴出来就能定位。
-
-## 已知的局限
-
-这些不是 bug 而是 macOS 的约束：
-
-1. **原生全屏（绿灯全屏）窗口**不能通过 AX API 移动。想调整的话先按 `⌃⌘F` 退出全屏，再用我们的快捷键。
-2. **需要 Accessibility 权限**。升级 macOS 后偶尔会被静默撤销；发现快捷键突然不灵，先检查权限。
-3. **快捷键冲突**：`⌃⌥⌘` 前缀和 Raycast / Alfred / 某些 app 里的快捷键可能撞车。`init.lua` 启动时会弹一个警告，你也可以改 `config.lua` 里的 `hyper`。
-4. **Stage Manager / Mission Control**：在这些模式下，窗口可能被 macOS 临时接管；这时快捷键的行为由系统决定，我们的代码本身没有问题。
-
-## 目录结构
-
-```
-.
-├── init.lua                 Hammerspoon 入口，被链到 ~/.hammerspoon/init.lua
-├── config.example.lua       用户本地配置模板（拷成 config.lua 自行修改）
-├── modules/
-│   ├── geometry.lua         纯几何：半屏/栅格/ratio/钳位
-│   ├── screens.lua          显示器排序与 id/name/role 解析
-│   ├── actions.lua          高层窗口动作（纯函数：输入世界，输出目标矩形）
-│   ├── layouts.lua          布局捕获/恢复/序列化
-│   ├── hotkeys.lua          快捷键绑定声明表 + 冲突检测
-│   └── driver.lua           连接 Hammerspoon 运行时的薄适配层
-├── spec/
-│   ├── helper.lua           busted 初始化：设置 package.path 并装 hs 假模块
-│   ├── fakes/hs.lua         Hammerspoon API 的 Linux 假实现
-│   ├── *_spec.lua           单元测试
-│   └── golden/              场景回放的快照
-├── scripts/
-│   ├── install.sh           Mac 上的一键安装
-│   └── doctor.sh            Mac 上的健康检查
-├── .github/workflows/ci.yml Linux CI（luacheck + busted）
-├── Makefile                 make check / lint / test / install / doctor
-└── README.md
+```bash
+cd FreeWindow
+swift build
+swift run FreeWindowTestRunner
+./Scripts/build-dmg.sh
 ```
 
-## 授权
+The deterministic test runner currently covers 182 assertions across geometry,
+screen ordering, actions, hotkey conflicts, busy detection, and Pomodoro
+transitions.
 
-MIT。
+Real-system E2E scripts:
+
+```bash
+swift Scripts/e2e-pomodoro-menubar.swift
+swift Scripts/e2e-pomodoro-break-options.swift
+swift Scripts/e2e-window-cross-screen.swift
+```
+
+The E2E scripts require FreeWindow to be running and the invoking terminal to
+have Accessibility permission.
+
+## Repository layout
+
+```text
+FreeWindow/
+├── Package.swift
+├── config.example.json
+├── FreeWindow/
+│   ├── App/            lifecycle, status item, config, permissions
+│   ├── Core/           pure geometry, layouts, Pomodoro state machine
+│   ├── Features/       window manager, clipboard, screenshot, Pomodoro, help
+│   ├── Services/       Accessibility, hotkeys, screens, reminders, locking
+│   └── Resources/
+├── FreeWindowTests/    deterministic standalone test runner
+├── Packaging/          icons and third-party notices
+└── Scripts/            build, install, signing, and E2E scripts
+```
+
+## Third-party software
+
+The DMG bundles Ice. See `FreeWindow/Packaging/THIRD_PARTY_NOTICES.md` for its
+license notice. FreeWindow does not overwrite an already installed Ice app.
+
+## License
+
+[MIT](LICENSE)

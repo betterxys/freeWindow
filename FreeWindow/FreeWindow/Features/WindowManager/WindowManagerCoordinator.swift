@@ -18,7 +18,7 @@ final class WindowManagerCoordinator {
         hotkeyService.start()
         installBindings()
         screenService.startWatching { [weak self] in
-            self?.reinstallBindings()
+            self?.handleScreenLayoutChange()
         }
 
         let layoutDir = FileManager.default.homeDirectoryForCurrentUser
@@ -74,22 +74,32 @@ final class WindowManagerCoordinator {
         }
     }
 
-    private func reinstallBindings() {
-        hotkeyService.stop()
-        hotkeyService.start()
-        installBindings()
-        toast.show("Screen layout changed – bindings reinstalled")
+    private func handleScreenLayoutChange() {
+        // Window actions resolve NSScreen dynamically at execution time, so
+        // no hotkey re-registration is needed. Stopping the shared hotkey
+        // service here used to erase clipboard, screenshot, and pomodoro
+        // shortcuts registered by AppDelegate.
+        toast.show("Screen layout changed")
     }
 
     // MARK: - Action Execution
 
     private func executeAction(_ action: @escaping (ActionContext) -> WMRect?) {
+        appendWindowLog("[WindowManager] action requested frontmost=\(NSWorkspace.shared.frontmostApplication?.localizedName ?? "nil") AX=\(AXIsProcessTrusted())\n")
         guard AXIsProcessTrusted() else {
-            toast.show("⚠️ Grant Accessibility permission, then toggle switch off/on")
+            PermissionSetupService.shared.notifyHotkeyBlocked()
+            appendWindowLog("[WindowManager] blocked: AX not trusted\n")
             return
         }
-        guard let ctx = buildContext() else { return }
-        guard let targetFrame = action(ctx.context) else { return }
+        guard let ctx = buildContext() else {
+            appendWindowLog("[WindowManager] blocked: no focused window context\n")
+            return
+        }
+        guard let targetFrame = action(ctx.context) else {
+            appendWindowLog("[WindowManager] no-op: action returned nil currentScreen=\(ctx.context.screenIndex)\n")
+            return
+        }
+        appendWindowLog("[WindowManager] setFrame from=\(ctx.context.windowFrame) screen=\(ctx.context.screenIndex) to=\(targetFrame)\n")
         ctx.window.setFrame(targetFrame)
     }
 
@@ -113,11 +123,23 @@ final class WindowManagerCoordinator {
         return (ctx, win)
     }
 
+    private func appendWindowLog(_ msg: String) {
+        let logFile = "/tmp/freewindow_window.log"
+        guard let data = msg.data(using: .utf8) else { return }
+        if let fh = FileHandle(forWritingAtPath: logFile) {
+            fh.seekToEndOfFile()
+            fh.write(data)
+            fh.closeFile()
+        } else {
+            FileManager.default.createFile(atPath: logFile, contents: data)
+        }
+    }
+
     // MARK: - Layout Save/Restore
 
     private func saveLayout() {
         guard AXIsProcessTrusted() else {
-            toast.show("⚠️ Need Accessibility permission for layout save")
+            PermissionSetupService.shared.notifyHotkeyBlocked()
             return
         }
         guard let store = layoutStore else { return }

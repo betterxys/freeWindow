@@ -133,6 +133,12 @@ enum CheatsheetData {
             CheatsheetItem(label: "Remove All Pins", shortcut: "⌃⌥⌘⇧P"),
             CheatsheetItem(label: "This Cheatsheet", shortcut: "⌃⌥⌘/"),
         ]),
+        CheatsheetCategory(name: "Pomodoro", items: [
+            CheatsheetItem(label: "Start / Pause", shortcut: "⌃⇧S"),
+            CheatsheetItem(label: "Skip Phase", shortcut: "⌃⌥⌘⇧."),
+            CheatsheetItem(label: "Cancel", shortcut: "⌃⌥⌘⇧X"),
+            CheatsheetItem(label: "Status", shortcut: "⌃⌥⌘⇧/"),
+        ]),
     ]
 }
 

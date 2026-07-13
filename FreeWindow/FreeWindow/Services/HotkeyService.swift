@@ -142,6 +142,7 @@ final class HotkeyService {
 
     /// Called by the Carbon event handler when a hotkey fires.
     fileprivate func handleHotKey(id: UInt32) {
+        appendLog("[HotkeyService] ▶️ Pressed #\(id)\n")
         if let handler = handlers[id] {
             DispatchQueue.main.async { handler() }
         }

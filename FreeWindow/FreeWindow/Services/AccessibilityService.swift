@@ -41,12 +41,9 @@ struct AXWindow {
         return (value as? Bool) ?? false
     }
 
-    /// Get the CGWindowID for this window.
-    /// Uses the private but stable _AXUIElementGetWindow function.
+    /// Get the CGWindowID by matching this AX window against the public
+    /// CoreGraphics on-screen window list.
     var windowId: CGWindowID? {
-        var windowId: CGWindowID = 0
-        // Use the public workaround: get window list and match by position/size
-        // since _AXUIElementGetWindow is not available in all environments
         guard let pos = getPosition(), let size = getSize() else { return nil }
         let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
         for info in windowList {

@@ -1,11 +1,3 @@
-# Local per-machine overrides (user's Mac)
-config.lua
-spec/.coverage
-luacov.*.out
-
-# Lua build artifacts
-*.luac
-
 # OS junk
 .DS_Store
 Thumbs.db

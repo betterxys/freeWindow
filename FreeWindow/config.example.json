@@ -1,0 +1,22 @@
+{
+  "pomodoro": {
+    "work_minutes": 25,
+    "rest_minutes": 5,
+    "long_rest_minutes": 15,
+    "cycles_until_long_rest": 4,
+    "break_discipline": "gentle",
+    "break_snooze_minutes": 5,
+    "lock_warning_seconds": 10,
+    "lock_action": "displays_sleep",
+    "busy_grace_seconds": 60,
+    "busy_max_retries": 3,
+    "busy_keywords": [
+      "zoom.us",
+      "wemeet",
+      "tencentmeeting",
+      "msteams",
+      "webex",
+      "obs"
+    ]
+  }
+}
